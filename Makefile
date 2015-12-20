@@ -46,9 +46,9 @@ mongo_test: kill_mongo_test
 	@rm -rf /tmp/motorengine_test/mongotestdata && mkdir -p /tmp/motorengine_test/mongotestdata
 	@rm -rf /tmp/motorengine_test_2/mongotestdata && mkdir -p /tmp/motorengine_test_2/mongotestdata
 	@rm -rf /tmp/motorengine_test_3/mongotestdata && mkdir -p /tmp/motorengine_test_3/mongotestdata
-	@mongod --dbpath /tmp/motorengine_test/mongotestdata --logpath /tmp/motorengine_test/mongotestlog --port 4445 --quiet --smallfiles --oplogSize 128 &
-	@mongod --dbpath /tmp/motorengine_test_2/mongotestdata --logpath /tmp/motorengine_test_2/mongotestlog --replSet rs0 --port 27017 --quiet --smallfiles --oplogSize 128 &
-	@mongod --dbpath /tmp/motorengine_test_3/mongotestdata --logpath /tmp/motorengine_test_3/mongotestlog --replSet rs0 --port 27018 --quiet --smallfiles --oplogSize 128 &
+	@mongod --dbpath /tmp/motorengine_test/mongotestdata --logpath /tmp/motorengine_test/mongotestlog --port 4445 --quiet --smallfiles --oplogSize 128 --fork
+	@mongod --dbpath /tmp/motorengine_test_2/mongotestdata --logpath /tmp/motorengine_test_2/mongotestlog --replSet rs0 --port 27017 --quiet --smallfiles --oplogSize 128 --fork
+	@mongod --dbpath /tmp/motorengine_test_3/mongotestdata --logpath /tmp/motorengine_test_3/mongotestlog --replSet rs0 --port 27018 --quiet --smallfiles --oplogSize 128 --fork
 	@sleep 10
 	@mongo --host localhost --port 27017 --eval 'rs.initiate({_id: "rs0", members: [{ _id: 0, host: "localhost:27017" }]});rs.conf();while(!rs.add("localhost:27018")["ok"]){};quit()'
 
