@@ -43,7 +43,7 @@ class EmbeddedDocumentField(BaseField):
 
     def validate(self, value):
         # avoiding circular reference
-        from motorengine import Document
+        from motorengine.document import BaseDocument as Document
 
         if not isinstance(self.embedded_type, type) or not issubclass(self.embedded_type, Document):
             raise ValueError(

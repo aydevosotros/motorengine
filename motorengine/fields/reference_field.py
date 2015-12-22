@@ -45,7 +45,7 @@ class ReferenceField(BaseField):
 
     def validate(self, value):
         # avoiding circular reference
-        from motorengine import Document
+        from motorengine.document import BaseDocument as Document
 
         if not isinstance(self.reference_type, type) or not issubclass(self.reference_type, Document):
             raise ValueError(

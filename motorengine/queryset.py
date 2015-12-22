@@ -15,6 +15,7 @@ from motorengine.errors import UniqueKeyViolationError
 
 DEFAULT_LIMIT = 1000
 
+
 class QuerySet(object):
     def __init__(self, klass):
         self.__klass__ = klass
@@ -27,7 +28,11 @@ class QuerySet(object):
     def is_lazy(self):
         return self.__klass__.__lazy__
 
+    def _get_connection_function(self):
+        return get_connection
+
     def coll(self, alias=None):
+        get_connection = self._get_connection_function()
         if alias is not None:
             conn = get_connection(alias=alias)
         elif self.__klass__.__alias__ is not None:
@@ -404,7 +409,6 @@ class QuerySet(object):
 
         self._skip = skip
         return self
-
 
     def limit(self, limit):
         '''

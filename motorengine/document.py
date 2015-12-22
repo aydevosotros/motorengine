@@ -190,7 +190,7 @@ class BaseDocument(object):
         if results is None:
             results = []
 
-        if not isinstance(document, Document):
+        if not isinstance(document, BaseDocument):
             return results
 
         if fields:

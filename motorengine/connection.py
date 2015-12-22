@@ -10,12 +10,6 @@ try:
 except ImportError:
     pass
 
-try:
-    from motor import MotorClient, MotorReplicaSetClient
-except ImportError:
-    pass
-
-from motorengine.database import Database
 
 DEFAULT_CONNECTION_NAME = 'default'
 
@@ -27,6 +21,35 @@ class ConnectionError(Exception):
 _connection_settings = {}
 _connections = {}
 _default_dbs = {}
+
+
+def get_motor_client_classes(framework='tornado'):
+    '''
+    Get MotorClient and MotorReplicaSetClient classes for specified framework
+
+    framework could be 'tornado' (default) or 'asyncio'
+    '''
+    if (framework == 'tornado'):
+        from motor import MotorClient, MotorReplicaSetClient
+        return (MotorClient, MotorReplicaSetClient)
+    elif (framework == 'asyncio'):
+        from motor.motor_asyncio import (
+            AsyncIOMotorClient, AsyncIOMotorReplicaSetClient
+        )
+        return (AsyncIOMotorClient, AsyncIOMotorReplicaSetClient)
+    else:
+        raise ValueError('framework could be "tornado" or "asyncio"')
+
+
+def get_database_class(framework='tornado'):
+    if framework == 'tornado':
+        from motorengine.database import Database
+        return Database
+    elif framework == 'asyncio':
+        from motorengine.aiomotorengine.database import Database
+        return Database
+    else:
+        raise ValueError('framework could be "tornado" or "asyncio"')
 
 
 def register_connection(db, alias, **kwargs):
@@ -47,25 +70,27 @@ def cleanup():
     _default_dbs = {}
 
 
-def disconnect(alias=DEFAULT_CONNECTION_NAME):
+def disconnect(alias=DEFAULT_CONNECTION_NAME, framework='tornado'):
     global _connections
     global _connections_settings
     global _default_dbs
 
     if alias in _connections:
-        get_connection(alias=alias).disconnect()
+        get_connection(alias=alias, framework=framework).disconnect()
         del _connections[alias]
         del _connection_settings[alias]
         del _default_dbs[alias]
 
 
-def get_connection(alias=DEFAULT_CONNECTION_NAME, db=None):
+def get_connection(alias=DEFAULT_CONNECTION_NAME, db=None, framework='tornado'):
     global _connections
     global _default_dbs
 
     if alias not in _connections:
         conn_settings = _connection_settings[alias].copy()
         db = conn_settings.pop('name', None)
+
+        MotorClient, MotorReplicaSetClient = get_motor_client_classes(framework)
 
         connection_class = MotorClient
         if 'replicaSet' in conn_settings:
@@ -99,10 +124,13 @@ def get_connection(alias=DEFAULT_CONNECTION_NAME, db=None):
         database = getattr(_connections[alias], _default_dbs[alias])
     else:
         database = getattr(_connections[alias], db)
+
+    Database = get_database_class(framework)
+
     return Database(_connections[alias], database)
 
 
-def connect(db, alias=DEFAULT_CONNECTION_NAME, **kwargs):
+def connect(db, alias=DEFAULT_CONNECTION_NAME, framework='tornado', **kwargs):
     """Connect to the database specified by the 'db' argument.
 
     Connection settings may be provided here as well if the database is not
@@ -119,4 +147,4 @@ def connect(db, alias=DEFAULT_CONNECTION_NAME, **kwargs):
         kwargs['name'] = db
         register_connection(db, alias, **kwargs)
 
-    return get_connection(alias, db=db)
+    return get_connection(alias, db=db, framework=framework)

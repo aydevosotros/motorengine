@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import sys
 
 from preggy import expect
+import asyncio
 
-from motorengine import connect
+from motorengine.aiomotorengine import connect
 from motorengine.connection import (
     ConnectionError, get_motor_client_classes, get_database_class
 )
-from tests import AsyncTestCase
+from tests.aiomotorengine import AsyncTestCase, async_test
 
 
 class TestConnect(AsyncTestCase):
@@ -46,18 +46,24 @@ class TestConnect(AsyncTestCase):
         import motorengine.aiomotorengine.database
         expect(Database).to_equal(motorengine.aiomotorengine.database.Database)
 
+    @async_test
+    @asyncio.coroutine
     def test_can_connect_to_a_database(self):
-        db = connect('test', host="localhost", port=27017, io_loop=self.io_loop)
+        db = connect('test', host="localhost", port=27017,
+                     io_loop=self.io_loop)
 
-        args, kwargs = self.exec_async(db.ping)
-        ping_result = args[0]['ok']
+        res = yield from db.ping()
+        ping_result = res['ok']
         expect(ping_result).to_equal(1.0)
 
+    @async_test
+    @asyncio.coroutine
     def test_connect_to_replica_set(self):
-        db = connect('test', host="localhost:27017,localhost:27018", replicaSet="rs0", port=27017, io_loop=self.io_loop)
+        db = connect('test', host="localhost:27017,localhost:27018",
+                     replicaSet="rs0", port=27018, io_loop=self.io_loop)
 
-        args, kwargs = self.exec_async(db.ping)
-        ping_result = args[0]['ok']
+        res = yield from db.ping()
+        ping_result = res['ok']
         expect(ping_result).to_equal(1.0)
 
     def test_connect_to_replica_set_with_invalid_replicaset_name(self):

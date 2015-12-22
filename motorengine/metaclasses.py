@@ -14,6 +14,8 @@ class classproperty(property):
 
 
 class DocumentMetaClass(type):
+    query_set_class = QuerySet
+
     def __new__(cls, name, bases, attrs):
         flattened_bases = cls._get_bases(bases)
         super_new = super(DocumentMetaClass, cls).__new__
@@ -70,7 +72,7 @@ class DocumentMetaClass(type):
         if not '__alias__' in attrs:
             new_class.__alias__ = None
 
-        setattr(new_class, 'objects', classproperty(lambda *args, **kw: QuerySet(new_class)))
+        setattr(new_class, 'objects', classproperty(lambda *args, **kw: cls.query_set_class(new_class)))
 
         return new_class
 
