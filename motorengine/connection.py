@@ -13,6 +13,9 @@ except ImportError:
 
 DEFAULT_CONNECTION_NAME = 'default'
 
+FRAMEWORK_TORNADO = 'tornado'
+FRAMEWORK_ASYNCIO = 'asyncio'
+
 
 class ConnectionError(Exception):
     pass
@@ -23,16 +26,16 @@ _connections = {}
 _default_dbs = {}
 
 
-def get_motor_client_classes(framework='tornado'):
+def get_motor_client_classes(framework=FRAMEWORK_TORNADO):
     '''
     Get MotorClient and MotorReplicaSetClient classes for specified framework
 
     framework could be 'tornado' (default) or 'asyncio'
     '''
-    if (framework == 'tornado'):
+    if (framework == FRAMEWORK_TORNADO):
         from motor import MotorClient, MotorReplicaSetClient
         return (MotorClient, MotorReplicaSetClient)
-    elif (framework == 'asyncio'):
+    elif (framework == FRAMEWORK_ASYNCIO):
         from motor.motor_asyncio import (
             AsyncIOMotorClient, AsyncIOMotorReplicaSetClient
         )
@@ -41,11 +44,11 @@ def get_motor_client_classes(framework='tornado'):
         raise ValueError('framework could be "tornado" or "asyncio"')
 
 
-def get_database_class(framework='tornado'):
-    if framework == 'tornado':
+def get_database_class(framework=FRAMEWORK_TORNADO):
+    if framework == FRAMEWORK_TORNADO:
         from motorengine.database import Database
         return Database
-    elif framework == 'asyncio':
+    elif framework == FRAMEWORK_ASYNCIO:
         from motorengine.aiomotorengine.database import Database
         return Database
     else:
@@ -70,7 +73,7 @@ def cleanup():
     _default_dbs = {}
 
 
-def disconnect(alias=DEFAULT_CONNECTION_NAME, framework='tornado'):
+def disconnect(alias=DEFAULT_CONNECTION_NAME, framework=FRAMEWORK_TORNADO):
     global _connections
     global _connections_settings
     global _default_dbs
@@ -82,7 +85,9 @@ def disconnect(alias=DEFAULT_CONNECTION_NAME, framework='tornado'):
         del _default_dbs[alias]
 
 
-def get_connection(alias=DEFAULT_CONNECTION_NAME, db=None, framework='tornado'):
+def get_connection(
+    alias=DEFAULT_CONNECTION_NAME, db=None, framework=FRAMEWORK_TORNADO
+):
     global _connections
     global _default_dbs
 
@@ -130,7 +135,9 @@ def get_connection(alias=DEFAULT_CONNECTION_NAME, db=None, framework='tornado'):
     return Database(_connections[alias], database)
 
 
-def connect(db, alias=DEFAULT_CONNECTION_NAME, framework='tornado', **kwargs):
+def connect(
+    db, alias=DEFAULT_CONNECTION_NAME, framework=FRAMEWORK_TORNADO, **kwargs
+):
     """Connect to the database specified by the 'db' argument.
 
     Connection settings may be provided here as well if the database is not

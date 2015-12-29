@@ -3,10 +3,17 @@ try:
 
     import motorengine.connection
     from functools import partial
-    connect = partial(motorengine.connection.connect, framework='asyncio')
-    disconnect = partial(motorengine.connection.disconnect, framework='asyncio')
+    connect = partial(
+        motorengine.connection.connect,
+        framework=motorengine.connection.FRAMEWORK_ASYNCIO
+    )
+    disconnect = partial(
+        motorengine.connection.disconnect,
+        framework=motorengine.connection.FRAMEWORK_ASYNCIO
+    )
     get_connection = partial(
-        motorengine.connection.get_connection, framework='asyncio'
+        motorengine.connection.get_connection,
+        framework=motorengine.connection.FRAMEWORK_ASYNCIO
     )
 
     from motorengine.aiomotorengine.document import Document  # NOQA
