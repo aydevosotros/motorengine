@@ -13,7 +13,7 @@ try:
         BaseField, StringField, BooleanField, DateTimeField,
         UUIDField, ListField, EmbeddedDocumentField, ReferenceField, URLField,
         EmailField, IntField, FloatField, DecimalField, BinaryField,
-        JsonField
+        JsonField, PasswordField
     )
 
     from motorengine.aggregation.base import Aggregation  # NOQA
