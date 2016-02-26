@@ -7,7 +7,9 @@ from bson.objectid import ObjectId
 
 from motorengine.aiomotorengine.aggregation.base import Aggregation
 from motorengine.aiomotorengine import get_connection
-from motorengine.errors import UniqueKeyViolationError
+from motorengine.errors import (
+    UniqueKeyViolationError, PartlyLoadedDocumentError
+)
 
 import motorengine.queryset
 
@@ -47,6 +49,16 @@ class QuerySet(motorengine.queryset.QuerySet):
 
     @asyncio.coroutine
     def save(self, document, alias=None):
+        if document.is_partly_loaded:
+            msg = (
+                "Partly loaded document {0} can't be saved. Document should "
+                "be loaded without 'only', 'exclude' or 'fields' "
+                "QuerySet's modifiers"
+            )
+            raise PartlyLoadedDocumentError(
+                msg.format(document.__class__.__name__)
+            )
+
         if self.validate_document(document):
             yield from self.ensure_index(alias=alias)
             return (yield from self.save_document(document, alias=alias))
@@ -194,11 +206,20 @@ class QuerySet(motorengine.queryset.QuerySet):
             filters = Q(**kwargs)
             filters = self.get_query_from_filters(filters)
 
-        instance = yield from self.coll(alias).find_one(filters)
+        instance = yield from self.coll(alias).find_one(
+            filters, fields=self._loaded_fields.to_query(self.__klass__)
+        )
         if instance is None:
             return None
         else:
-            doc = self.__klass__.from_son(instance)
+            doc = self.__klass__.from_son(
+                instance,
+                # if _loaded_fields is not empty then
+                # document is partly loaded
+                _is_partly_loaded=bool(self._loaded_fields),
+                # set projections for references (if any)
+                _reference_loaded_fields=self._reference_loaded_fields
+            )
             if self.is_lazy:
                 return doc
             else:
@@ -230,9 +251,17 @@ class QuerySet(motorengine.queryset.QuerySet):
 
         docs = yield from cursor.to_list(**to_list_arguments)
 
+        # if _loaded_fields is not empty then documents are partly loaded
+        is_partly_loaded = bool(self._loaded_fields)
+
         result = []
         for doc in docs:
-            obj = self.__klass__.from_son(doc)
+            obj = self.__klass__.from_son(
+                doc,
+                # set projections for references (if any)
+                _reference_loaded_fields=self._reference_loaded_fields,
+                _is_partly_loaded=is_partly_loaded
+            )
 
             if (lazy is not None and not lazy) or not obj.is_lazy:
                 yield from obj.load_references(obj._fields)

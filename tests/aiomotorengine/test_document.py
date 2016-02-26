@@ -103,6 +103,24 @@ class TestDocument(AsyncTestCase):
 
     @async_test
     @asyncio.coroutine
+    def test_can_create_new_instance_with_defaults_and_db_fields(self):
+        class Model(Document):
+            last_name = StringField(db_field="db_last", default="Heynemann")
+            first_name = StringField(
+                db_field="db_first", default=lambda: "Bernardo"
+            )
+
+        self.drop_coll_async(Model.__collection__)
+
+        model = Model()
+        result = yield from model.save()
+
+        expect(result._id).not_to_be_null()
+        expect(result.first_name).to_equal("Bernardo")
+        expect(result.last_name).to_equal("Heynemann")
+
+    @async_test
+    @asyncio.coroutine
     def test_creating_invalid_instance_fails(self):
         user = User(
             email="heynemann@gmail.com", first_name="Bernardo",
