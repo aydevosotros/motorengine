@@ -91,6 +91,24 @@ class TestDocument(AsyncTestCase):
         expect(result.last_name).to_equal("Heynemann")
         expect(result.is_admin).to_be_true()
 
+    def test_can_create_new_instance_with_defaults_and_db_fields(self):
+        class Model(Document):
+            last_name = StringField(db_field="db_last", default="Heynemann")
+            first_name = StringField(
+                db_field="db_first", default=lambda: "Bernardo"
+            )
+
+        self.drop_coll(Model.__collection__)
+
+        model = Model()
+        model.save(callback=self.stop)
+
+        result = self.wait()
+
+        expect(result._id).not_to_be_null()
+        expect(result.first_name).to_equal("Bernardo")
+        expect(result.last_name).to_equal("Heynemann")
+
     def test_creating_invalid_instance_fails(self):
         user = User(email="heynemann@gmail.com", first_name="Bernardo", last_name="Heynemann", website="bla")
         try:
