@@ -4,6 +4,7 @@
 import sys
 import operator
 import itertools
+from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 from tornado.concurrent import return_future
@@ -102,7 +103,27 @@ class QuerySet(object):
         return handle
 
     def update_field_on_save_values(self, document, creating):
+        # FIXME: It seems that `creating` param has the oposite value
+        # and should be called something like `updating` because in
+        # `self.save` and `self.bulk_insert` this method is called as follow:
+        # `self.update_field_on_save_values(document, document._id is not None)`
+        # where `document._id is not None` is `True` when the document
+        # already exists.
+        from motorengine.fields.datetime_field import DateTimeField
+
+        # We will use this doc_creating flag to process DateTimeField
+        # due to the bug described above
+        doc_creating = document._id is None
+
         for field_name, field in self.__klass__._fields.items():
+            # check the need for autogeneration of datetime field value
+            if isinstance(field, DateTimeField):
+                if field.auto_now_on_insert and doc_creating:
+                    setattr(document, field_name, datetime.now())
+                elif field.auto_now_on_update:
+                    setattr(document, field_name, datetime.now())
+
+            # for on_save we still use buggy `creating`
             if field.on_save is not None:
                 setattr(document, field_name, field.on_save(document, creating))
 
@@ -117,12 +138,12 @@ class QuerySet(object):
                 msg.format(document.__class__.__name__)
             )
 
+        self.update_field_on_save_values(document, document._id is not None)
         if self.validate_document(document):
             self.ensure_index(callback=self.indexes_saved_before_save(document, callback, alias=alias), alias=alias)
 
     def indexes_saved_before_save(self, document, callback, alias=None):
         def handle(*args, **kw):
-            self.update_field_on_save_values(document, document._id is not None)
             doc = document.to_son()
 
             if document._id is not None:
@@ -162,6 +183,9 @@ class QuerySet(object):
         docs_to_insert = []
 
         for document_index, document in enumerate(documents):
+            self.update_field_on_save_values(
+                document, document._id is not None
+            )
             try:
                 is_valid = is_valid and self.validate_document(document)
             except Exception:
@@ -304,7 +328,6 @@ class QuerySet(object):
         )
         from motorengine.fields.list_field import ListField
         from motorengine.fields.reference_field import ReferenceField
-        from motorengine.document import BaseDocument
 
         tail = field_name
         head = []  # part of the name before reference
