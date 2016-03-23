@@ -106,30 +106,35 @@ class QuerySet(object):
 
         return handle
 
-    def update_field_on_save_values(self, document, creating):
-        # FIXME: It seems that `creating` param has the oposite value
-        # and should be called something like `updating` because in
-        # `self.save` and `self.bulk_insert` this method is called as follow:
-        # `self.update_field_on_save_values(document, document._id is not None)`
-        # where `document._id is not None` is `True` when the document
-        # already exists.
+    def update_field_on_save_values(self, document, updating):
+        """Recursively update fields of the document before saving.
+
+        Fields of embedded documents are updated too through recursive call.
+        :param document: could be top level document or embedded document.
+        :param updating: if `True` document is being updated, `False` document
+        is being created
+        """
         from motorengine.fields.datetime_field import DateTimeField
+        from motorengine.fields.embedded_document_field import (
+            EmbeddedDocumentField
+        )
 
-        # We will use this doc_creating flag to process DateTimeField
-        # due to the bug described above
-        doc_creating = document._id is None
-
-        for field_name, field in self.__klass__._fields.items():
+        for field_name, field in document.__class__._fields.items():
             # check the need for autogeneration of datetime field value
             if isinstance(field, DateTimeField):
-                if field.auto_now_on_insert and doc_creating:
+                if field.auto_now_on_insert and not updating:
                     setattr(document, field_name, datetime.now())
                 elif field.auto_now_on_update:
                     setattr(document, field_name, datetime.now())
 
-            # for on_save we still use buggy `creating`
             if field.on_save is not None:
-                setattr(document, field_name, field.on_save(document, creating))
+                setattr(document, field_name, field.on_save(document, updating))
+
+            if isinstance(field, EmbeddedDocumentField):
+                # update fields recursively for embedded document
+                doc = getattr(document, field_name)
+                if doc:
+                    self.update_field_on_save_values(doc, updating)
 
     def save(self, document, callback, alias=None):
         if document.is_partly_loaded:

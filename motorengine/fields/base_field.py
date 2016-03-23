@@ -11,7 +11,7 @@ class BaseField(object):
     * `db_field` - The name this field will have when sent to MongoDB
     * `default` - The default value (or callable) that will be used when first creating an instance that has no value set for the field
     * `required` - Indicates that if the field value evaluates to empty (using the `is_empty` method) a validation error is raised
-    * `on_save` - A function of the form `lambda doc, creating` that is called right before sending the document to the DB.
+    * `on_save` - A function of the form `lambda doc, updating` that is called right before sending the document to the DB.
     * `unique` - Indicates whether an unique index should be created for this field.
     * `sparse` - Indicates whether a sparse index should be created for this field. This also will not pass empty values to DB.
 
