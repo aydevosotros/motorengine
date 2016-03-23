@@ -120,3 +120,76 @@ class TestDateTimeField(AsyncTestCase):
         expect(model.created).to_be_lesser_or_equal_to(now_after)
         created = model.created
         expect(created).to_equal(model.created)
+
+    def test_embedded_document_with_auto_insert_datetime_field(self):
+        from motorengine import Document
+        from motorengine import EmbeddedDocumentField
+
+        class Model(Document):
+            created = DateTimeField(
+                auto_now_on_insert=True, auto_now_on_update=False
+            )
+
+        class Doc(Document):
+            embedded = EmbeddedDocumentField(
+                embedded_document_type=Model, required=True
+            )
+
+        self.drop_coll(Doc.__collection__)
+        self.drop_coll(Model.__collection__)
+
+        doc = Doc(embedded=Model())
+
+        expect(doc.embedded.created).to_be_null()
+
+        doc.save(callback=self.stop)
+        self.wait()
+
+        expect(doc.embedded.created).not_to_be_null()
+        expect(isinstance(doc.embedded.created, datetime)).to_be_true()
+
+    def test_embedded_document_with_auto_update_datetime_field(self):
+        from motorengine import Document
+        from motorengine import EmbeddedDocumentField
+
+        class Model(Document):
+            created = DateTimeField(
+                auto_now_on_insert=True, auto_now_on_update=True
+            )
+
+        class Doc(Document):
+            embedded = EmbeddedDocumentField(
+                embedded_document_type=Model, required=False
+            )
+
+        self.drop_coll(Doc.__collection__)
+        self.drop_coll(Model.__collection__)
+
+        Doc.objects.create(callback=self.stop)
+        doc = self.wait()
+
+        expect(doc.embedded).to_be_null()
+
+        doc = Doc(embedded=Model())
+
+        expect(doc.embedded.created).to_be_null()
+
+        now_before = datetime.now()
+        doc.save(callback=self.stop)
+        self.wait()
+        now_after = datetime.now()
+
+        expect(doc.embedded.created).not_to_be_null()
+        expect(isinstance(doc.embedded.created, datetime)).to_be_true()
+        expect(doc.embedded.created).to_be_greater_or_equal_to(now_before)
+        expect(doc.embedded.created).to_be_lesser_or_equal_to(now_after)
+
+        created = doc.embedded.created
+
+        doc.save(callback=self.stop)
+        self.wait()
+
+        expect(doc.embedded.created).not_to_be_null()
+        expect(isinstance(doc.embedded.created, datetime)).to_be_true()
+        expect(doc.embedded.created).to_be_greater_than(created)
+        expect(doc.embedded.created).to_be_lesser_or_equal_to(datetime.now())
