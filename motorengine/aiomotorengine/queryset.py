@@ -59,6 +59,7 @@ class QuerySet(motorengine.queryset.QuerySet):
                 msg.format(document.__class__.__name__)
             )
 
+        self.update_field_on_save_values(document, document._id is not None)
         if self.validate_document(document):
             yield from self.ensure_index(alias=alias)
             return (yield from self.save_document(document, alias=alias))
@@ -66,7 +67,6 @@ class QuerySet(motorengine.queryset.QuerySet):
     @asyncio.coroutine
     def save_document(self, document, alias=None):
         ''' Insert or update document '''
-        self.update_field_on_save_values(document, document._id is not None)
         doc = document.to_son()
 
         if document._id is not None:
@@ -91,6 +91,9 @@ class QuerySet(motorengine.queryset.QuerySet):
         docs_to_insert = []
 
         for document_index, document in enumerate(documents):
+            self.update_field_on_save_values(
+                document, document._id is not None
+            )
             try:
                 is_valid = is_valid and self.validate_document(document)
             except Exception:
