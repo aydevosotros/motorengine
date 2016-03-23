@@ -32,12 +32,6 @@ class DateTimeField(BaseField):
         self.auto_now_on_update = auto_now_on_update
 
     def get_value(self, value):
-        if self.auto_now_on_insert and value is None:
-            return datetime.now()
-
-        if self.auto_now_on_update:
-            return datetime.now()
-
         return value
 
     def to_son(self, value):
