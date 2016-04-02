@@ -24,6 +24,9 @@ class JsonField(BaseField):
     '''
 
     def validate(self, value):
+        if value is None:
+            return True
+
         try:
             serialize(value)
             return True
@@ -31,7 +34,13 @@ class JsonField(BaseField):
             return False
 
     def to_son(self, value):
+        if value is None:
+            return None
+
         return serialize(value)
 
     def from_son(self, value):
+        if value is None:
+            return None
+
         return deserialize(value)

@@ -21,12 +21,14 @@ class TestDecimalField(AsyncTestCase):
 
         expect(field.to_son(10.0230)).to_equal(u'10.02')
         expect(field.to_son("10.56823")).to_equal(u'10.57')
+        expect(field.to_son(None)).to_be_null()
 
     def test_from_son(self):
         field = DecimalField()
 
         expect(field.from_son(u"10.0230")).to_equal(Decimal("10.02"))
         expect(field.from_son(u"10.56948")).to_equal(Decimal("10.57"))
+        expect(field.from_son(None)).to_be_null()
 
     def test_validate_enforces_decimals(self):
         field = DecimalField()
@@ -34,6 +36,7 @@ class TestDecimalField(AsyncTestCase):
         expect(field.validate(1.0)).to_be_true()
         expect(field.validate("1.5")).to_be_true()
         expect(field.validate("qwe")).to_be_false()
+        expect(field.validate(None)).to_be_true()
 
     def test_validate_enforces_min_value(self):
         field = DecimalField(min_value=Decimal(5.4))
