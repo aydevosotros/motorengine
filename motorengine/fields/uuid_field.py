@@ -22,6 +22,7 @@ class UUIDField(BaseField):
     def validate(self, value):
         if value is None:
             return True
+
         if isinstance(value, UUID):
             return True
 
@@ -40,6 +41,9 @@ class UUIDField(BaseField):
         return value is None or str(value) == ""
 
     def to_son(self, value):
+        if value is None:
+            return None
+
         if isinstance(value, six.string_types):
             return UUID(value)
 

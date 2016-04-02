@@ -22,6 +22,7 @@ class TestJsonField(AsyncTestCase):
         expect(field.validate(1)).to_be_true()
         expect(field.validate([1, 2, 3])).to_be_true()
         expect(field.validate({"a": 1, "b": 3})).to_be_true()
+        expect(field.validate(None)).to_be_true()
 
     def test_to_son(self):
         dt = datetime(2010, 11, 12, 13, 14, 15)
@@ -32,6 +33,7 @@ class TestJsonField(AsyncTestCase):
         expect(field.to_son([1, 2, 3])).to_equal(serialize([1, 2, 3]))
         expect(field.to_son({"a": 1, "b": 3})).to_equal(serialize({"a": 1, "b": 3}))
         expect(field.to_son(dt)).to_equal(serialize(dt))
+        expect(field.to_son(None)).to_be_null()
 
     def test_from_son(self):
         dt = datetime.utcnow()
@@ -41,6 +43,7 @@ class TestJsonField(AsyncTestCase):
         expect(field.from_son("1")).to_equal(1)
         expect(field.from_son("[1, 2, 3]")).to_be_like([1, 2, 3])
         expect(field.from_son('{"a": 1, "b": 3}')).to_be_like({"a": 1, "b": 3})
+        expect(field.from_son(None)).to_be_null()
 
         try:
             import ujson  # NOQA
