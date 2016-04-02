@@ -10,6 +10,11 @@ class User(Document):
     password = PasswordField(required=True)
 
 
+class Guest(Document):
+    __collection__ = 'guests'
+    password = PasswordField(required=False)
+
+
 class TestPasswordField(AsyncTestCase):
 
     def setUp(self):
@@ -55,3 +60,26 @@ class TestPasswordField(AsyncTestCase):
         user4 = yield from User.objects.get(password='yyy')
         expect(user4).not_to_be_null()
         expect(user4._id).to_equal(id)
+
+    @async_test
+    @asyncio.coroutine
+    def test_password_field_not_required_save_and_load(self):
+        yield from Guest.objects.delete()
+        guest = Guest()
+        password = None
+
+        expect(guest.password).to_be_null()
+        expect(guest.password == password).to_be_true()
+        expect(guest.password is None).to_be_true()
+        expect(guest.password == 'xxx').to_be_false()
+
+        yield from guest.save()
+
+        expect(guest._id).not_to_be_null()
+
+        guest = yield from Guest.objects.get(guest._id)
+
+        expect(guest.password).to_be_null()
+        expect(guest.password == password).to_be_true()
+        expect(guest.password is None).to_be_true()
+        expect(guest.password == 'xxx').to_be_false()

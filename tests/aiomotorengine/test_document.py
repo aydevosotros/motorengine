@@ -8,7 +8,8 @@ from preggy import expect
 from motorengine.aiomotorengine import (
     Document, StringField, BooleanField, ListField,
     EmbeddedDocumentField, ReferenceField, DESCENDING,
-    URLField, DateTimeField, UUIDField, IntField, JsonField
+    URLField, DateTimeField, UUIDField, IntField, JsonField,
+    BinaryField, FloatField, DecimalField, EmailField, PasswordField
 )
 from motorengine.errors import (
     InvalidDocumentError, LoadReferencesRequiredError, UniqueKeyViolationError
@@ -1323,3 +1324,65 @@ class TestDocument(AsyncTestCase):
 
         expect(base.list_val).to_length(3)
         expect(base.list_val[0]).to_be_instance_of(Ref)
+
+    @async_test
+    @asyncio.coroutine
+    def test_can_save_document_with_not_required_fields(self):
+        class EmbeddedDoc(Document):
+            field = IntField(required=True)
+
+        class Doc(Document):
+            field_bin = BinaryField(required=False)
+            field_dt = DateTimeField(required=False)
+            field_dec = DecimalField(required=False)
+            field_email = EmailField(required=False)
+            field_float = FloatField(required=False)
+            field_int = IntField(required=False)
+            field_json = JsonField(required=False)
+            field_str = StringField(required=False)
+            field_url = URLField(required=False)
+            field_uuid = UUIDField(required=False)
+            field_embedded = EmbeddedDocumentField(
+                embedded_document_type=EmbeddedDoc,
+                required=False
+            )
+            field_list = ListField(
+                IntField(required=True),
+                required=False
+            )
+            field_pass = PasswordField(required=False)
+
+        yield from Doc.objects.delete()
+        doc = Doc()
+        expect(doc.field_bin).to_be_null()
+        expect(doc.field_dt).to_be_null()
+        expect(doc.field_dec).to_be_null()
+        expect(doc.field_email).to_be_null()
+        expect(doc.field_float).to_be_null()
+        expect(doc.field_int).to_be_null()
+        expect(doc.field_json).to_be_null()
+        expect(doc.field_str).to_be_null()
+        expect(doc.field_url).to_be_null()
+        expect(doc.field_uuid).to_be_null()
+        expect(doc.field_embedded).to_be_null()
+        expect(doc.field_list).to_be_like([])
+        expect(doc.field_pass).to_be_null()
+
+        yield from doc.save()
+        expect(doc._id).not_to_be_null()
+
+        doc = yield from Doc.objects.get(doc._id)
+
+        expect(doc.field_bin).to_be_null()
+        expect(doc.field_dt).to_be_null()
+        expect(doc.field_dec).to_be_null()
+        expect(doc.field_email).to_be_null()
+        expect(doc.field_float).to_be_null()
+        expect(doc.field_int).to_be_null()
+        expect(doc.field_json).to_be_null()
+        expect(doc.field_str).to_be_null()
+        expect(doc.field_url).to_be_null()
+        expect(doc.field_uuid).to_be_null()
+        expect(doc.field_embedded).to_be_null()
+        expect(doc.field_list).to_be_like([])
+        expect(doc.field_pass).to_be_null()

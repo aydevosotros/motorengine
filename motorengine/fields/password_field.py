@@ -93,9 +93,14 @@ class PasswordField(BaseField):
         self.crypt_func = crypt_func
 
     def from_son(self, value):
+        if value is None:
+            return None
+
         return PasswordType(value, crypt_func=self.crypt_func, is_crypted=True)
 
     def to_son(self, value):
+        if value is None:
+            return None
 
         if isinstance(value, six.string_types):
             return self.crypt_func(value)

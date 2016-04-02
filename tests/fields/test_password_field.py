@@ -12,6 +12,11 @@ class User(Document):
     password = PasswordField(required=True)
 
 
+class Guest(Document):
+    __collection__ = 'guests'
+    password = PasswordField(required=False)
+
+
 class TestPasswordType(unittest.TestCase):
 
     def test_md5(self):
@@ -117,6 +122,28 @@ class TestPasswordField(AsyncTestCase):
         expect(user4).not_to_be_null()
         expect(user4._id).to_equal(id)
 
+    @gen_test
+    def test_password_field_not_required_save_and_load(self):
+        yield Guest.objects.delete()
+        guest = Guest()
+        password = None
+
+        expect(guest.password).to_be_null()
+        expect(guest.password == password).to_be_true()
+        expect(guest.password is None).to_be_true()
+        expect(guest.password == 'xxx').to_be_false()
+
+        yield guest.save()
+
+        expect(guest._id).not_to_be_null()
+
+        guest = yield Guest.objects.get(guest._id)
+
+        expect(guest.password).to_be_null()
+        expect(guest.password == password).to_be_true()
+        expect(guest.password is None).to_be_true()
+        expect(guest.password == 'xxx').to_be_false()
+
     def test_create_password_field(self):
         field = PasswordField(db_field="test")
         expect(field.db_field).to_equal("test")
@@ -136,3 +163,5 @@ class TestPasswordField(AsyncTestCase):
         field = PasswordField(required=False)
 
         expect(field.validate(None)).to_be_true()
+        expect(field.to_son(None)).to_be_null()
+        expect(field.from_son(None)).to_be_null()

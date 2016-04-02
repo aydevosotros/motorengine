@@ -12,9 +12,11 @@ from motorengine import (
     Document, StringField, BooleanField, ListField,
     EmbeddedDocumentField, ReferenceField, DESCENDING,
     URLField, DateTimeField, UUIDField, IntField, JsonField,
-    BinaryField, FloatField, DecimalField, EmailField
+    BinaryField, FloatField, DecimalField, EmailField, PasswordField
 )
-from motorengine.errors import InvalidDocumentError, LoadReferencesRequiredError, UniqueKeyViolationError
+from motorengine.errors import (
+    InvalidDocumentError, LoadReferencesRequiredError, UniqueKeyViolationError
+)
 from tests import AsyncTestCase
 
 
@@ -24,7 +26,9 @@ class User(Document):
     last_name = StringField(max_length=50, default="Heynemann")
     is_admin = BooleanField(default=True)
     website = URLField(default="http://google.com/")
-    updated_at = DateTimeField(required=True, auto_now_on_insert=True, auto_now_on_update=True)
+    updated_at = DateTimeField(
+        required=True, auto_now_on_insert=True, auto_now_on_update=True
+    )
     facebook_id = StringField(unique=True, sparse=True)
 
     def __repr__(self):
@@ -1282,6 +1286,7 @@ class TestDocument(AsyncTestCase):
                 IntField(required=True),
                 required=False
             )
+            field_pass = PasswordField(required=False)
 
         yield Doc.objects.delete()
         doc = Doc()
@@ -1297,6 +1302,7 @@ class TestDocument(AsyncTestCase):
         expect(doc.field_uuid).to_be_null()
         expect(doc.field_embedded).to_be_null()
         expect(doc.field_list).to_be_like([])
+        expect(doc.field_pass).to_be_null()
 
         yield doc.save()
         expect(doc._id).not_to_be_null()
@@ -1315,3 +1321,4 @@ class TestDocument(AsyncTestCase):
         expect(doc.field_uuid).to_be_null()
         expect(doc.field_embedded).to_be_null()
         expect(doc.field_list).to_be_like([])
+        expect(doc.field_pass).to_be_null()

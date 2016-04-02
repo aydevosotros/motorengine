@@ -2,7 +2,9 @@ import sys
 
 from preggy import expect
 
-from motorengine.aiomotorengine import Document, StringField, EmbeddedDocumentField
+from motorengine.aiomotorengine import (
+    Document, StringField, EmbeddedDocumentField
+)
 from tests.aiomotorengine import AsyncTestCase
 
 
@@ -39,6 +41,7 @@ class TestEmbeddedDocumentField(AsyncTestCase):
         expect(field.to_son(u)).to_be_like({
             'name': 'test'
         })
+        expect(field.to_son(None)).to_be_null()
 
     def test_from_son(self):
         field = EmbeddedDocumentField(db_field="test", embedded_document_type=User)
@@ -49,3 +52,17 @@ class TestEmbeddedDocumentField(AsyncTestCase):
 
         expect(user).to_be_instance_of(User)
         expect(user.name).to_equal("test2")
+        expect(field.from_son(None)).to_be_null()
+
+    def test_validate_enforces_embedded_document_object(self):
+        class Doc(Document):
+            name = StringField()
+
+        field = EmbeddedDocumentField(embedded_document_type=User)
+
+        user = User(name='test')
+        doc = Doc(name='test')
+
+        expect(field.validate(user)).to_be_true()
+        expect(field.validate(doc)).to_be_false()
+        expect(field.validate(None)).to_be_true()
