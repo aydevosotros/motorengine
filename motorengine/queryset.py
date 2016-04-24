@@ -100,7 +100,10 @@ class QuerySet(object):
     def handle_update(self, document, callback):
         def handle(*arguments, **kw):
             if len(arguments) > 1 and arguments[1]:
-                raise arguments[1]
+                if isinstance(arguments[1], (DuplicateKeyError, )):
+                    raise UniqueKeyViolationError.from_pymongo(str(arguments[1]), self.__klass__)
+                else:
+                    raise arguments[1]
 
             callback(document)
 
