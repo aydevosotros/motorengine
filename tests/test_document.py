@@ -952,9 +952,17 @@ class TestDocument(AsyncTestCase):
         UniqueFieldDocument.objects.create(name="test", callback=self.stop)
         self.wait()
 
-        msg = 'The index "test.UniqueFieldDocument.$name_1" was violated when trying to save this "UniqueFieldDocument" (error code: E11000).'
+        # msg = 'The index "test.UniqueFieldDocument.$name_1" was violated when trying to save this "UniqueFieldDocument" (error code: E11000).'
         with expect.error_to_happen(UniqueKeyViolationError):
             UniqueFieldDocument.objects.create(name="test", callback=self.stop)
+            self.wait()
+
+        UniqueFieldDocument.objects.create(name="test2", callback=self.stop)
+        doc = self.wait()
+
+        doc.name = 'test'
+        with expect.error_to_happen(UniqueKeyViolationError):
+            doc.save(callback=self.stop)
             self.wait()
 
     def test_unique_sparse_field(self):
