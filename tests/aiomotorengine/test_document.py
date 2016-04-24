@@ -1018,6 +1018,12 @@ class TestDocument(AsyncTestCase):
         with expect.error_to_happen(UniqueKeyViolationError):
             yield from UniqueFieldDocument.objects.create(name="test")
 
+        doc = yield from UniqueFieldDocument.objects.create(name="test2")
+
+        doc.name = 'test'
+        with expect.error_to_happen(UniqueKeyViolationError):
+            yield from doc.save()
+
     @async_test
     @asyncio.coroutine
     def test_unique_sparse_field(self):

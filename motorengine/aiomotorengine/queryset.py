@@ -70,7 +70,12 @@ class QuerySet(motorengine.queryset.QuerySet):
         doc = document.to_son()
 
         if document._id is not None:
-            yield from self.coll(alias).update({'_id': document._id}, doc)
+            try:
+                yield from self.coll(alias).update({'_id': document._id}, doc)
+            except DuplicateKeyError as e:
+                raise UniqueKeyViolationError.from_pymongo(
+                    str(e), self.__klass__
+                )
         else:
             try:
                 doc_id = yield from self.coll(alias).insert(doc)
@@ -135,6 +140,7 @@ class QuerySet(motorengine.queryset.QuerySet):
             multi=True,
         )
         res = yield from self.coll(alias).update(**update_arguments)
+
         return edict({
             "count": int(res['n']),
             "updated_existing": res['updatedExisting']
