@@ -1,5 +1,6 @@
 import six
 import hashlib
+import hmac
 
 from motorengine.fields.base_field import BaseField
 
@@ -43,9 +44,9 @@ class PasswordType:
 
     def __eq__(self, other):
         if isinstance(other, six.string_types):
-            return self.crypt_func(other) == self.value
+            return hmac.compare_digest(self.crypt_func(other), self.value)
         elif isinstance(other, PasswordType):
-            return self.value == other.value
+            return hmac.compare_digest(self.value, other.value)
         return False
 
     def __ne__(self, other):
