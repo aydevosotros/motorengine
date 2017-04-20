@@ -5,6 +5,10 @@ from motorengine.aiomotorengine import Document, PasswordField
 from tests.aiomotorengine import AsyncTestCase, async_test
 
 
+HASH_XXX = ('cd2eb0837c9b4c962c22d2ff8b5441b7'
+            'b45805887f051d39bf133b583baf6860')
+
+
 class User(Document):
     __collection__ = 'users'
     password = PasswordField(required=True)
@@ -45,7 +49,7 @@ class TestPasswordField(AsyncTestCase):
         expect(user2.password).to_equal(user.password)
 
         # test string representation
-        expect(str(user2.password)).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        expect(str(user2.password)).to_equal(HASH_XXX)
 
         # change password with new and save
         user2.password = 'yyy'

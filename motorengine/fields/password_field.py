@@ -1,18 +1,23 @@
 import six
 import hashlib
-import hmac
+try:
+    from secrets import compare_digest
+except ImportError:
+    from hmac import compare_digest
 
 from motorengine.fields.base_field import BaseField
 
 
 def md5(string):
-    bstr = bytes(string, 'utf8')
-    return hashlib.md5(bstr).hexdigest()
+    return hashlib.md5(bytes(string, 'utf8')).hexdigest()
+
+
+def sha256(string):
+    return hashlib.sha256(bytes(string, 'utf8')).hexdigest()
 
 
 class PasswordType:
-    '''
-    Type to represent a password for PasswordField in python
+    '''Type to represent a password for PasswordField in python.
 
     Usage:
 
@@ -22,17 +27,27 @@ class PasswordType:
         assert password == 'xxx' # True
 
         # create password with encrypted value for 'xxx'
-        password = PasswordType('f561aaf6ef0bf14d4208bb46a4ccb3ad', is_crypted=True)
-        assert password == 'xxx' # True
+        other = PasswordType(
+            'cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf6860',
+            is_crypted=True)
+        assert password == other # True
 
     Arguments:
 
-    * `value` - value of the password, could be crypted or not crypted, according to `is_crypted`
-    * `crypt_func` - crypt function witch takes string and return its crypted value, by default md5 is used
-    * `is_crypted` - if True - value is crypted, if False - value will be crypted with `crypt_func`
+    * `value` - value of the password, could be crypted or not crypted,
+                according to `is_crypted`.
+    * `crypt_func` - crypt function witch takes string and returns its crypted
+                     value, by default `sha256` algorithm is used.
+    * `is_crypted` - if True - value is crypted, if False - value will be
+                     crypted with `crypt_func`.
+
+    .. versionchanged:: 0.9.0.2
+
+        Move from `md5` to `sha256` as default algorithm.
+
     '''
 
-    def __init__(self, value, crypt_func=md5, is_crypted=False):
+    def __init__(self, value, crypt_func=sha256, is_crypted=False):
         if is_crypted:
             self.value = value
         else:
@@ -44,9 +59,9 @@ class PasswordType:
 
     def __eq__(self, other):
         if isinstance(other, six.string_types):
-            return hmac.compare_digest(self.crypt_func(other), self.value)
+            return compare_digest(self.crypt_func(other), self.value)
         elif isinstance(other, PasswordType):
-            return hmac.compare_digest(self.value, other.value)
+            return compare_digest(self.value, other.value)
         return False
 
     def __ne__(self, other):
@@ -54,8 +69,7 @@ class PasswordType:
 
 
 class PasswordField(BaseField):
-    '''
-    Field responsible for storing encrypted password
+    '''Field responsible for storing encrypted password.
 
     Usage:
 
@@ -64,14 +78,13 @@ class PasswordField(BaseField):
         class User(Document):
             password = PasswordField(required=True)
 
-        # in tornado just use yield from instead of await
-
         async def go():
             user = User(password='xxx')
 
             # note that after field is created or assigned with value
             # it contains only encrypted value
-            assert str(user.password), 'f561aaf6ef0bf14d4208bb46a4ccb3ad'
+            hash_str = 'cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf6860'
+            assert str(user.password) == hash_str
 
             await user.save()  # note that password is saved to db in crypted form
 
@@ -86,10 +99,16 @@ class PasswordField(BaseField):
     Available arguments (apart from those in `BaseField`):
 
     * `crypt_func` - crypt function witch takes string and returns its crypted
-      value, by default `md5(value).hexdigest()` from `hashlib` is used
+                     value, by default `sha256` from `hashlib` is used.
+
+
+    .. versionchanged:: 0.9.0.2
+
+        Move from `md5` to `sha256` as default algorithm.
+
     '''
 
-    def __init__(self, crypt_func=md5, *args, **kwargs):
+    def __init__(self, crypt_func=sha256, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.crypt_func = crypt_func
 

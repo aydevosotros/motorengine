@@ -2,9 +2,13 @@ from preggy import expect
 import unittest
 
 from motorengine import Document, PasswordField
-from motorengine.fields.password_field import md5, PasswordType
+from motorengine.fields.password_field import md5, sha256, PasswordType
 from tests import AsyncTestCase
 from tornado.testing import gen_test
+
+
+HASH_XXX = ('cd2eb0837c9b4c962c22d2ff8b5441b7'
+            'b45805887f051d39bf133b583baf6860')
 
 
 class User(Document):
@@ -22,9 +26,12 @@ class TestPasswordType(unittest.TestCase):
     def test_md5(self):
         expect(md5('xxx')).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
 
+    def test_sha256(self):
+        expect(sha256('xxx')).to_equal(HASH_XXX)
+
     def test_password_type(self):
-        x = PasswordType('xxx', crypt_func=md5, is_crypted=False)
-        expect(x.value).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        x = PasswordType('xxx', crypt_func=sha256, is_crypted=False)
+        expect(x.value).to_equal(HASH_XXX)
         expect(x).to_equal('xxx')
         expect(x).not_to_equal('yyy')
         expect(x).not_to_equal(5)
@@ -34,7 +41,7 @@ class TestPasswordType(unittest.TestCase):
         expect(x != 'yyy').to_be_true()
 
         y = PasswordType(
-            'f561aaf6ef0bf14d4208bb46a4ccb3ad', crypt_func=md5, is_crypted=True
+            HASH_XXX, crypt_func=sha256, is_crypted=True
         )
         expect(y).to_equal('xxx')
         expect(y).to_equal(x)
@@ -42,7 +49,7 @@ class TestPasswordType(unittest.TestCase):
         # test operators ==, !=
         expect(y == x).to_be_true()
 
-        other = PasswordType('other', crypt_func=md5, is_crypted=False)
+        other = PasswordType('other', crypt_func=sha256, is_crypted=False)
         expect(y != other).to_be_true()
 
         z = PasswordType('xxx')
@@ -67,16 +74,16 @@ class TestPasswordField(AsyncTestCase):
 
         son = u.to_son()
         expect('password' in son).to_be_true()
-        expect(son['password']).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        expect(son['password']).to_equal(HASH_XXX)
 
     def test_password_field_to_son(self):
         field = PasswordField()
 
         value = field.to_son(PasswordType('xxx'))
-        expect(value).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        expect(value).to_equal(HASH_XXX)
 
         value = field.to_son('xxx')
-        expect(value).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        expect(value).to_equal(HASH_XXX)
 
     def test_password_field_to_son_wrong_value(self):
         field = PasswordField()
@@ -106,7 +113,7 @@ class TestPasswordField(AsyncTestCase):
         expect(user2.password).to_equal(user.password)
 
         # test string representation
-        expect(str(user2.password)).to_equal('f561aaf6ef0bf14d4208bb46a4ccb3ad')
+        expect(str(user2.password)).to_equal(HASH_XXX)
 
         # change password with new and save
         user2.password = 'yyy'
