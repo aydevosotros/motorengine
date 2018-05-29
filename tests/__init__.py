@@ -3,7 +3,6 @@
 
 from tornado.testing import AsyncTestCase as TornadoAsyncTestCase
 from tornado.testing import gen_test  # NOQA
-
 import motorengine.connection
 from motorengine import connect
 

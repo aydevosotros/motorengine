@@ -22,7 +22,7 @@ try:
         BaseField, StringField, BooleanField, DateTimeField,
         UUIDField, ListField, EmbeddedDocumentField, ReferenceField, URLField,
         EmailField, IntField, FloatField, DecimalField, BinaryField,
-        JsonField, PasswordField
+        JsonField, PasswordField, ObjectIdField
     )
 
     from motorengine.aiomotorengine.aggregation.base import Aggregation  # NOQA
